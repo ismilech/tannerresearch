@@ -1,6 +1,6 @@
 import re
 
-INDEX = re.compile(r"(/index.html|/)")
+INDEX = re.compile(r"^/$|/index\.html$")  # This ensures that only exact matches to "/" or "/index.html" trigger the "index" detection
 RFI_ATTACK = re.compile(r".*((http(s){0,1}|ftp(s){0,1}):).*", re.IGNORECASE)
 LFI_ATTACK = re.compile(r".*(/\.\.)*(home|proc|usr|etc)/.*")
 LFI_FILEPATH = re.compile(r"((\.\.|/).*)")
