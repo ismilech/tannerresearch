@@ -86,7 +86,7 @@ class BaseHandler:
         """
         Return all the GET parameter
         :param path (str): The URL path from which GET parameters are to be extracted
-        :return: A MultiDictProxy object containg name and value of parameters
+        :return: A MultiDictProxy object containing name and value of parameters
         """
         path = urllib.parse.unquote(path)
         encodings = [("&&", "%26%26"), (";", "%3B")]
@@ -97,11 +97,11 @@ class BaseHandler:
 
     async def get_emulation_result(self, session, data, target_emulators):
         """
-        Return emulation result for the vulnerabilty of highest order
+        Return emulation result for the vulnerability of highest order
         :param session (Session object): Current active session
         :param data (MultiDictProxy object): Data to be checked
         :param target_emulator (list): Emulators against which data is to be checked
-        :return: A dict object containing name, order and paylod to be injected for vulnerability
+        :return: A dict object containing name, order and payload to be injected for vulnerability
         """
         detection = dict(name="unknown", order=0)
         attack_params = {}
@@ -139,16 +139,20 @@ class BaseHandler:
         path = data["path"]
         get_data = self.extract_get_data(path)
         detection = dict(name="unknown", order=0)
-        # dummy for wp-content
-        if re.match(patterns.WORD_PRESS_CONTENT, path):
-            detection = {"name": "wp-content", "order": 1}
-        elif re.match(patterns.INDEX, path):
-            detection = {"name": "index", "order": 1}
-        # check attacks against get parameters
+
+        # Prioritize SQLi detection over other detections
         possible_get_detection = await self.get_emulation_result(session, get_data, self.get_emulators)
         if possible_get_detection and detection["order"] < possible_get_detection["order"]:
             detection = possible_get_detection
-        # check attacks against cookie values
+
+        # Check for generic patterns if no higher-order detection is found
+        if detection["name"] == "unknown":
+            if re.match(patterns.WORD_PRESS_CONTENT, path):
+                detection = {"name": "wp-content", "order": 1}
+            elif re.match(patterns.INDEX, path):
+                detection = {"name": "index", "order": 1}
+
+        # Check attacks against cookie values
         possible_cookie_detection = await self.handle_cookies(session, data)
         if possible_cookie_detection and detection["order"] < possible_cookie_detection["order"]:
             detection = possible_cookie_detection
